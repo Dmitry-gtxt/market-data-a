@@ -37,7 +37,7 @@
 
 ### Gotchas
 
-- Args limit: нельзя подписываться на неограниченное количество тем в одном сообщении.
+- Args limit: нельзя подписываться на неограниченное количество тем в одном сообщении. (*observed, needs verify: точный лимит не документирован*)
 - Разные WS endpoints для spot / linear / inverse / option.
 
 ---
@@ -68,6 +68,7 @@
 - Клиент отправляет `{"id":"...","type":"ping"}` каждые `pingInterval` (18 с).
 - Сервер отвечает `{"type":"pong"}`.
 - Timeout: `pingTimeout` (≈10 с без ответа → reconnect).
+- Источник: [docs](https://www.kucoin.com/docs-new/websocket-api/base-info/introduction).
 
 ### Compression
 
@@ -82,8 +83,8 @@
 ### Gotchas
 
 - Без token server — нет WS-подключения.
-- Max 300 subscriptions/connection, но рекомендуется ≤50.
-- Push данных ~каждые 100 ms.
+- Max 300 subscriptions/connection ([docs](https://www.kucoin.com/docs-new/websocket-api/base-info/introduction)).
+- Push данных ~каждые 100 ms. (*observed, needs verify*)
 
 ---
 
@@ -120,10 +121,10 @@
 
 ### Gotchas
 
-- Ping/pong — raw строки, не JSON.
-- Рекомендация: ≤50 каналов на соединение.
-- 10 msg/s лимит (включая ping) — при превышении disconnect.
-- 240 subscribe-запросов / час / connection.
+- Ping/pong — raw строки, не JSON ([docs](https://www.bitget.com/api-doc/common/websocket-intro)).
+- 10 msg/s лимит (включая ping) — при превышении disconnect ([docs](https://www.bitget.com/api-doc/common/websocket-intro)).
+- 240 subscribe-запросов / час / connection ([docs](https://www.bitget.com/api-doc/common/websocket-intro)).
+- Рекомендация: ≤50 каналов на соединение. (*observed, needs verify: точная цифра не найдена*)
 
 ---
 
@@ -144,7 +145,7 @@
 ### Heartbeat
 
 - Standard WebSocket ping/pong frames (RFC 6455).
-- Также application-level `{"channel":"spot.ping"}`.
+- Также application-level: `{"channel":"spot.ping"}`.
 - Источник: [docs](https://www.gate.io/docs/developers/apiv4/ws/en/).
 
 ### Compression
@@ -159,8 +160,8 @@
 
 ### Gotchas
 
-- Spot и futures — **разные** WebSocket endpoints и API структуры.
-- 50 requests/s per channel.
+- Spot и futures — **разные** WebSocket endpoints и API структуры ([docs](https://www.gate.io/docs/developers/apiv4/ws/en/)).
+- 50 requests/s per channel ([docs](https://www.gate.io/docs/developers/apiv4/ws/en/)).
 - Futures: отдельные endpoints для BTC и USDT settle.
 
 ---
@@ -176,7 +177,7 @@
 ### Endpoints
 
 - Spot market: `wss://api.huobi.pro/ws` (или `wss://api-aws.huobi.pro/ws`).
-- Linear swap: `wss://api.hbdm.com/linear-swap-ws` (или `wss://api.hbdm.com/ws`).
+- Linear swap: `wss://api.hbdm.com/linear-swap-ws`.
 - Coin swap: `wss://api.hbdm.com/swap-ws`.
 
 ### Heartbeat
@@ -191,7 +192,7 @@
 - **Spot market WS: gzip сжатие всех сообщений.**
 - Клиент обязан декомпрессировать каждое входящее сообщение.
 - v2 WS (account) — без сжатия.
-- **Это уникальная особенность HTX — все остальные биржи шлют plain JSON.**
+- **Это уникальная особенность HTX — все остальные биржи (кроме BingX swap) шлют plain JSON.**
 
 ### Orderbook Recovery
 
@@ -201,8 +202,8 @@
 
 ### Gotchas
 
-- **gzip декомпрессия обязательна** для market WS.
-- Ping/pong инвертированы: сервер инициирует ping, клиент отвечает pong.
+- **gzip декомпрессия обязательна** для market WS ([docs](https://www.htx.com/en-us/opend/newApiPages/)).
+- Ping/pong инвертированы: сервер инициирует ping, клиент отвечает pong ([docs](https://www.htx.com/en-us/opend/newApiPages/)).
 - Домен `huobi.pro` всё ещё используется (legacy).
 - Futures (hbdm) — отдельный домен, отдельная структура API.
 
@@ -241,9 +242,9 @@
 
 ### Gotchas
 
-- **3 connections per URL per IP** (public) — критически важно.
-- Некоторые каналы (candles, mark-price-candle, index-candle) на `/business` URL, не `/public`.
-- Subscribe rate: 3 req/s, 480/h — самый строгий лимит среди всех бирж.
+- **3 connections per URL per IP** (public) — ([docs](https://www.okx.com/docs-v5/en/#overview-websocket-overview)).
+- Некоторые каналы (candles, mark-price-candle, index-candle) на `/business` URL, не `/public`. (*observed, needs verify*)
+- Subscribe rate: 3 req/s, 480/h — самый строгий лимит среди всех бирж ([docs](https://www.okx.com/docs-v5/en/#overview-websocket-overview)).
 - `instType` может быть `SPOT`, `SWAP`, `FUTURES`, `OPTION`.
 - Один WS может подписаться на разные `instType`.
 
@@ -263,26 +264,26 @@
 
 ### Heartbeat
 
-- Ping/pong (implementation-specific, check actual frames).
+- Ping/pong: формат не полностью документирован. (*needs verify*)
 - Источник: [docs](https://bingx-api.github.io/docs/).
 
 ### Compression
 
-- **gzip сжатие** для некоторых WS-сообщений (swap market).
+- **gzip сжатие** для некоторых WS-сообщений (swap market). (*needs verify: не все каналы*)
 - Клиент должен обрабатывать как сжатые, так и несжатые сообщения.
 
 ### Orderbook Recovery
 
 - Snapshot only (top N levels).
-- Нет incremental diff channel для spot.
+- Нет incremental diff channel для spot. (*needs verify*)
 
 ### Gotchas
 
-- **Нет inverse perpetual** — только USDT-margined.
-- Max 200 subscriptions / connection (spot, с 2024-08).
+- **Нет inverse perpetual** — только USDT-margined ([docs](https://bingx-api.github.io/docs/)).
+- Max 200 subscriptions / connection (spot, с 2024-08) ([docs](https://bingx-api.github.io/docs/)).
 - Документация менее подробная, чем у других бирж.
-- REST market data: shared limit 500 req / 10 s для spot + futures.
-- gzip декомпрессия может потребоваться (аналогично HTX, но не для всех каналов).
+- REST market data: shared limit 500 req / 10 s для spot + futures ([docs](https://bingx.com/en/support/articles/31103871611289)).
+- gzip декомпрессия может потребоваться (аналогично HTX). (*needs verify*)
 
 ---
 
@@ -307,7 +308,7 @@
 ### Compression Abstraction
 
 - **HTX (spot)**: все сообщения gzip → обязательная декомпрессия.
-- **BingX (swap)**: возможно gzip → проверять первые байты.
+- **BingX (swap)**: возможно gzip → проверять первые байты. (*needs verify*)
 - Остальные биржи: plain JSON, декомпрессия не нужна.
 
 ### Symbol Normalization
@@ -330,7 +331,7 @@
 3. Token expired (KuCoin, 24 h).
 4. Server maintenance / upgrade.
 5. Network instability.
-6. Too many connections from same IP (OKX: only 3 per URL!).
+6. Too many connections from same IP (OKX: 3 per URL).
 
 ---
 
