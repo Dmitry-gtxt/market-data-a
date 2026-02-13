@@ -1,73 +1,135 @@
-# Welcome to your Lovable project
+# Market Data Platform — Repo A
 
-## Project info
+Public market data collection, normalization, and streaming platform.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Exchanges: Bybit, KuCoin, Bitget, Gate, HTX, OKX, BingX.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Architecture
 
-**Use Lovable**
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full architecture overview.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+| Service | Role | Port | Replicas |
+|---------|------|------|----------|
+| `services/md-collector` | Connects to exchange WS/REST, normalizes, publishes to ws-hub, writes tick-log chunks | 3003 | 1 (strict) |
+| `services/ws-hub` | Single-replica fanout WS server with backpressure (raw/agg) | 3002 | **1 (strict)** |
+| `services/api-service` | REST API: subscriptions, snapshots, replay | 3001 | 1+ |
+| `apps/ui` | React SPA: stream table, filters, WS client | 5173 | — (Vercel) |
 
-Changes made via Lovable will be committed automatically to this repo.
+> **⚠️ ws-hub MUST remain single replica.**
+> Railway does not support sticky sessions.
+> See [docs/DEPLOYMENT_TOPOLOGY.md](docs/DEPLOYMENT_TOPOLOGY.md).
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Monorepo Structure
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+├── apps/ui/                  # React + Vite (deployed to Vercel)
+├── services/
+│   ├── md-collector/         # Exchange data collector
+│   ├── ws-hub/               # WebSocket fanout hub
+│   └── api-service/          # REST API
+├── packages/
+│   ├── shared/               # Contracts, enums, utils (Zod schemas)
+│   └── db/                   # DB migrations, models
+├── docs/                     # Architecture, capabilities, limits
+├── pnpm-workspace.yaml
+└── tsconfig.base.json
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Prerequisites
 
-**Use GitHub Codespaces**
+- Node.js 22+
+- pnpm 9+
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+## Local Development
 
-This project is built with:
+```bash
+# 1. Install dependencies
+pnpm install
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# 2. Copy env
+cp .env.example .env
+# Fill in DATABASE_URL, BUCKET_* credentials
 
-## How can I deploy this project?
+# 3. Start all services + UI
+pnpm dev
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+# 4. Or start individually
+pnpm --filter md-collector dev
+pnpm --filter ws-hub dev
+pnpm --filter api-service dev
+pnpm --filter ui dev
+```
 
-## Can I connect a custom domain to my Lovable project?
+### Health Checks
 
-Yes, you can!
+```bash
+curl http://localhost:3001/health   # api-service
+curl http://localhost:3002/health   # ws-hub
+curl http://localhost:3003/health   # md-collector
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Build
+
+```bash
+pnpm build
+```
+
+---
+
+## Lint
+
+```bash
+pnpm lint
+```
+
+---
+
+## Deploy
+
+### Railway (backend services)
+
+Each service in `services/` deploys as a separate Railway service.
+
+Environment variables are injected via Railway dashboard.
+
+**Critical**: `ws-hub` must be configured as **1 replica** — no horizontal scaling without external pub/sub.
+
+### Vercel (UI)
+
+`apps/ui` deploys as a static SPA on Vercel.
+
+Set environment variables:
+- `VITE_API_URL` — public URL of api-service
+- `VITE_WS_URL` — public URL of ws-hub
+
+---
+
+## Key Constraints
+
+1. **No exchange API keys** — Repo A uses only public endpoints.
+2. **No raw ticks in PostgreSQL** — tick-log goes to S3 bucket; Postgres stores indexes/snapshots only.
+3. **ws-hub = single replica** — sticky sessions not available on Railway.
+4. **md-collector = single replica** — until subscription planner is implemented.
+
+See [docs/NON_NEGOTIABLES.md](docs/NON_NEGOTIABLES.md) for full list.
+
+---
+
+## Documentation
+
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- [DEPLOYMENT_TOPOLOGY.md](docs/DEPLOYMENT_TOPOLOGY.md)
+- [NON_NEGOTIABLES.md](docs/NON_NEGOTIABLES.md)
+- [CAPABILITIES.md](docs/CAPABILITIES.md)
+- [RATE_LIMITS.md](docs/RATE_LIMITS.md)
+- [EXCHANGE_NOTES.md](docs/EXCHANGE_NOTES.md)
