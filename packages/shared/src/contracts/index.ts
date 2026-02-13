@@ -44,8 +44,8 @@ export type {
   ReplayResponse,
 } from "./http.js";
 
-export { ErrorCode, ErrorBodySchema } from "./errors.js";
-export type { ErrorBody } from "./errors.js";
+export { ErrorCodeSchema, ErrorBodySchema } from "./errors.js";
+export type { ErrorCode, ErrorBody } from "./errors.js";
 
 export { makeDedupeKey, makeGapKey } from "./dedupe.js";
 

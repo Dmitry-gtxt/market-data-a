@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ErrorCode = z.enum([
+export const ErrorCodeSchema = z.enum([
   "VALIDATION_ERROR",
   "RATE_LIMITED",
   "NOT_IMPLEMENTED",
@@ -8,10 +8,10 @@ export const ErrorCode = z.enum([
   "UNSUPPORTED",
 ]);
 
-export type ErrorCode = z.infer<typeof ErrorCode>;
+export type ErrorCode = z.infer<typeof ErrorCodeSchema>;
 
 export const ErrorBodySchema = z.object({
-  code: ErrorCode,
+  code: ErrorCodeSchema,
   message: z.string(),
   details: z.unknown().optional(),
 });
