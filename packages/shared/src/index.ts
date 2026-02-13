@@ -1,4 +1,4 @@
-// @market-data/shared
-// Contracts, enums, and utilities — populated in P03.
+// @market-data/shared — public API
+// Re-exports all contracts, types, and helpers.
 
-export {};
+export * from "./contracts/index.js";
