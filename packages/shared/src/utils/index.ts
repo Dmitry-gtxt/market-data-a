@@ -1,2 +1,1 @@
-// Placeholder — shared utility functions.
-export {};
+export { normalizeSymbol } from "./symbol-normalizer.js";

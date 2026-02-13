@@ -34,6 +34,8 @@ export {
   SnapshotsResponseSchema,
   ReplayRequestSchema,
   ReplayResponseSchema,
+  SymbolsResponseSchema,
+  MarketsResponseSchema,
 } from "./http.js";
 export type {
   HealthResponse,
@@ -42,6 +44,8 @@ export type {
   SnapshotsResponse,
   ReplayRequest,
   ReplayResponse,
+  SymbolsResponse,
+  MarketsResponse,
 } from "./http.js";
 
 export { ErrorCodeSchema, ErrorBodySchema } from "./errors.js";
