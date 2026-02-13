@@ -1,2 +1,57 @@
-// Placeholder — Zod contract schemas will be defined here in P03.
-export {};
+export { SCHEMA_VERSION } from "./version.js";
+export type { SchemaVersion } from "./version.js";
+
+export { ChannelSchema, CHANNELS } from "./channels.js";
+export type { Channel } from "./channels.js";
+
+export {
+  MarketTypeSchema,
+  EnvelopeSchema,
+  parseEnvelope,
+  safeParseEnvelope,
+} from "./envelope.js";
+export type { MarketType, Envelope } from "./envelope.js";
+
+export {
+  WsClientMessageSchema,
+  WsServerMessageSchema,
+  encodeWsMessage,
+  parseWsClientMessage,
+  parseWsServerMessage,
+  safeParseWsClientMessage,
+  safeParseWsServerMessage,
+} from "./ws-messages.js";
+export type {
+  StreamFilter,
+  WsClientMessage,
+  WsServerMessage,
+} from "./ws-messages.js";
+
+export {
+  HealthResponseSchema,
+  ReadyResponseSchema,
+  SubscriptionsResponseSchema,
+  SnapshotsResponseSchema,
+  ReplayRequestSchema,
+  ReplayResponseSchema,
+} from "./http.js";
+export type {
+  HealthResponse,
+  ReadyResponse,
+  SubscriptionsResponse,
+  SnapshotsResponse,
+  ReplayRequest,
+  ReplayResponse,
+} from "./http.js";
+
+export { ErrorCode, ErrorBodySchema } from "./errors.js";
+export type { ErrorBody } from "./errors.js";
+
+export { makeDedupeKey, makeGapKey } from "./dedupe.js";
+
+export {
+  EXAMPLE_TRADE_ENVELOPE,
+  EXAMPLE_HELLO_ENVELOPE,
+  EXAMPLE_SUBSCRIBE,
+  EXAMPLE_ACK,
+} from "./examples.js";
