@@ -50,7 +50,6 @@ export const SnapshotsResponseSchema = z.object({
 export type SnapshotsResponse = z.infer<typeof SnapshotsResponseSchema>;
 
 // --- POST /replay ---
-// NOTE: endpoint currently returns 501; contract defined for forward-compat.
 
 export const ReplayRequestSchema = z.object({
   schema_version: z.literal(SCHEMA_VERSION),
@@ -71,3 +70,39 @@ export const ReplayResponseSchema = z.object({
 });
 
 export type ReplayResponse = z.infer<typeof ReplayResponseSchema>;
+
+// --- GET /symbols ---
+
+export const SymbolItemSchema = z.object({
+  symbol_norm: z.string(),
+  base_asset: z.string(),
+  quote_asset: z.string(),
+});
+
+export const SymbolsResponseSchema = z.object({
+  schema_version: z.literal(SCHEMA_VERSION),
+  symbols: z.array(SymbolItemSchema),
+});
+
+export type SymbolsResponse = z.infer<typeof SymbolsResponseSchema>;
+
+// --- GET /markets ---
+
+export const MarketItemSchema = z.object({
+  exchange: z.string(),
+  market_type: MarketTypeSchema,
+  active: z.boolean(),
+  supports_spot: z.boolean().optional(),
+  supports_linear: z.boolean().optional(),
+  supports_inverse: z.boolean().optional(),
+  has_incremental_books: z.boolean().optional(),
+  has_funding: z.boolean().optional(),
+  has_open_interest: z.boolean().optional(),
+});
+
+export const MarketsResponseSchema = z.object({
+  schema_version: z.literal(SCHEMA_VERSION),
+  markets: z.array(MarketItemSchema),
+});
+
+export type MarketsResponse = z.infer<typeof MarketsResponseSchema>;
