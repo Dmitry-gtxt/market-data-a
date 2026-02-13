@@ -339,8 +339,6 @@
 
 **Date**: 2026-02-13
 
-### Sources
-
 | Exchange | Primary Documentation |
 |----------|---------------------|
 | Bybit | https://bybit-exchange.github.io/docs/v5/ws/connect |
