@@ -1,5 +1,7 @@
 # Deployment Topology — Repo A
 
+---
+
 ## Railway Services
 
 | Service | Type | Replicas | Notes |
@@ -10,11 +12,15 @@
 | **PostgreSQL** | Railway managed DB | 1 | Snapshots, каталог, индексы, health events |
 | **Storage Bucket** | Railway Storage (S3-compatible) | — | Tick-log chunks |
 
+---
+
 ## Vercel
 
 | Service | Notes |
 |---------|-------|
 | **ui** | React SPA, деплой через Vercel. Подключается к ws-hub (WS) и api-service (REST) по public URL. |
+
+---
 
 ## Ограничения Railway, влияющие на решения
 
@@ -25,16 +31,34 @@
 | Buckets = S3-compatible object storage | Tick-log chunks, доступ через AWS SDK, presigned URLs до 90 дней | [Storage Buckets docs](https://docs.railway.com/storage-buckets) |
 | Volumes несовместимы с replicas | Не используем volumes в сервисах, которым нужно масштабирование | [Volumes docs](https://docs.railway.com/volumes/reference) |
 
+---
+
 ## Версионирование деплоя
 
-- Каждый сервис получает env `APP_VERSION` при деплое (например `1.0.3` или git SHA).
+- Каждый сервис получает env `APP_VERSION` при деплое
+  (например `1.0.3` или git SHA).
+
 - При старте сервис логирует structured event:
+
+  ```json
+  {
+    "level": "info",
+    "event": "service_start",
+    "service": "md-collector",
+    "version": "1.0.3",
+    "ts": "..."
+  }
   ```
-  {"level":"info","event":"service_start","service":"md-collector","version":"1.0.3","ts":"..."}
-  ```
-- Release audit: при каждом деплое api-service записывает в Postgres таблицу `release_log`:
-  - `service`, `version`, `deployed_at`, `deployer` (из env или Railway API, если доступно).
-- Это позволяет коррелировать проблемы с конкретными релизами даже после ротации логов Railway.
+
+- Release audit: при каждом деплое api-service записывает в Postgres
+  таблицу `release_log`:
+  - `service`, `version`, `deployed_at`, `deployer`
+    (из env или Railway API, если доступно).
+
+- Это позволяет коррелировать проблемы с конкретными релизами
+  даже после ротации логов Railway.
+
+---
 
 ## Сетевая схема
 

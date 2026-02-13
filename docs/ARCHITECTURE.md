@@ -9,6 +9,8 @@
 | **api-service** | REST API: управление подписками (desired subscriptions), выдача latest snapshots, replay tick-log через presigned URLs, health/readiness. | Node 22 + Fastify |
 | **ui** | React 18 + Vite + TypeScript. Stream-таблица с фильтрами, переключение raw/agg, WebSocket-клиент к ws-hub. | Vercel |
 
+---
+
 ## Data Flow
 
 ```
@@ -25,8 +27,14 @@ md-collector  ──(internal WS)──▶  ws-hub  ──(client WS)──▶  
   └──▶  Postgres: latest_snapshots (upsert per symbol/channel)
 ```
 
-- **Replay**: api-service читает tick_files_index → генерирует presigned URL → клиент скачивает chunk напрямую из bucket.
-- **Latest state**: api-service читает latest_snapshots из Postgres → REST → ui.
+- **Replay**: api-service читает `tick_files_index` →
+  генерирует presigned URL →
+  клиент скачивает chunk напрямую из bucket.
+
+- **Latest state**: api-service читает `latest_snapshots` из Postgres →
+  REST → ui.
+
+---
 
 ## Storage
 
@@ -38,13 +46,16 @@ md-collector  ──(internal WS)──▶  ws-hub  ──(client WS)──▶  
 | `desired_subscriptions` | Какие каналы/символы активны для сбора |
 | `latest_snapshots` | Последнее значение по (exchange, symbol_norm, channel) |
 | `tick_files_index` | Индекс chunk-файлов: bucket key, exchange, symbol, channel, time_from, time_to, row_count, size_bytes |
-| `health_events` | Критичные события: connect/disconnect, stall, DQ violations (минимум, для аудита >30 дней) |
+| `health_events` | Критичные события: connect/disconnect, stall, DQ violations (аудит >30 дней) |
 
 ### S3-Compatible Bucket (Railway Storage)
 
 - **Tick-log chunks** — raw нормализованные события в NDJSON/gzip.
-- **Key partitioning**: `ticks/{exchange}/{symbol_norm}/{channel}/{YYYY-MM-DD}/{HH-mm}-{chunk_id}.ndjson.gz`
-- Retention: presigned URLs до 90 дней; lifecycle policy по необходимости.
+- **Key partitioning**:
+  `ticks/{exchange}/{symbol_norm}/{channel}/{YYYY-MM-DD}/{HH-mm}-{chunk_id}.ndjson.gz`
+- **Retention**: presigned URLs до 90 дней; lifecycle policy по необходимости.
+
+---
 
 ## Contracts
 
@@ -75,24 +86,56 @@ md-collector  ──(internal WS)──▶  ws-hub  ──(client WS)──▶  
 | `schema_version` | number | Версия схемы envelope (начинаем с 1) |
 | `payload` | object | Channel-specific данные |
 
-Обратная совместимость: новые поля добавляются опционально; удаление/переименование — только через bump schema_version + миграция.
+Обратная совместимость:
+новые поля добавляются опционально;
+удаление/переименование — только через bump `schema_version` + миграция.
+
+---
 
 ## Reliability
 
-- **Reconnect**: exponential backoff с jitter, max 60s.
-- **Heartbeat**: абстракция ping/pong поверх WS (биржи используют разные механизмы). Stall detector: если нет данных >N секунд — reconnect + health_event.
-- **DQ (Data Quality)**: проверка ts_exchange (не в будущем, не слишком старый), дедупликация по (exchange, symbol, channel, seq/ts_exchange), обнаружение пропусков seq.
-- **Chunk flush**: по размеру (например 10 MB) или по времени (например 1 мин), что наступит раньше.
+- **Reconnect**: exponential backoff с jitter, max 60 s.
+
+- **Heartbeat**: абстракция ping/pong поверх WS
+  (биржи используют разные механизмы).
+  Stall detector: если нет данных > N секунд — reconnect + health_event.
+
+- **DQ (Data Quality)**:
+  проверка `ts_exchange` (не в будущем, не слишком старый),
+  дедупликация по (exchange, symbol, channel, seq/ts_exchange),
+  обнаружение пропусков seq.
+
+- **Chunk flush**: по размеру (например 10 MB) или по времени (например 1 мин),
+  что наступит раньше.
+
+---
 
 ## Scaling Policy
 
-- **ws-hub**: single replica — **обязательно**. Railway не поддерживает sticky sessions; при >1 реплике клиенты попадают на разные инстансы и получают неполный поток. Горизонтальное масштабирование WS возможно только с внешней pub/sub шиной (Redis, NATS), что на данном этапе избыточно.
-- **md-collector**: single replica на старте. Масштабирование только после реализации планировщика подписок, который шардирует ответственность (символы/каналы) по репликам. Без шардинга — дубляж данных.
+- **ws-hub**: single replica — **обязательно**.
+  Railway не поддерживает sticky sessions;
+  при >1 реплике клиенты попадают на разные инстансы и получают неполный поток.
+  Горизонтальное масштабирование WS возможно только с внешней pub/sub шиной
+  (Redis, NATS), что на данном этапе избыточно.
+
+- **md-collector**: single replica на старте.
+  Масштабирование только после реализации планировщика подписок,
+  который шардирует ответственность (символы/каналы) по репликам.
+  Без шардинга — дубляж данных.
+
 - **api-service**: stateless, можно масштабировать горизонтально через Railway replicas.
+
+---
 
 ## Security (Repo A)
 
 - Только **public market data** — никаких API keys бирж.
-- Доступ к bucket: через env credentials (BUCKET_ACCESS_KEY, BUCKET_SECRET_KEY), **не хардкод**.
-- Выдача tick-log наружу: через presigned URLs (генерирует api-service) или прокси-эндпоинт.
-- UI ↔ ws-hub / api-service: на данном этапе без аутентификации (public data); при необходимости — JWT позже.
+
+- Доступ к bucket: через env credentials
+  (`BUCKET_ACCESS_KEY`, `BUCKET_SECRET_KEY`), **не хардкод**.
+
+- Выдача tick-log наружу: через presigned URLs
+  (генерирует api-service) или прокси-эндпоинт.
+
+- UI ↔ ws-hub / api-service: на данном этапе без аутентификации
+  (public data); при необходимости — JWT позже.
